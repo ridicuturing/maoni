@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    username: maoniUser
+    password: A.4aqhaoFO
+    url: jdbc:mysql://47.106.117.210:3306/maoni?useSSL=false
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+com:
+  dy:
+    springboot:
+      server:
+        mapper: true
+
+maoni:
+  web:
+    page:
+      login: /login.html
+      logout: /
+      post: /post
+
+    api:
+      login: /login
+      logout: /logout
+  defaultAvatarUrl: https://avatars2.githubusercontent.com/u/3821949?v=4
+
+pagehelper:
+  helperDialect: mysql
+
