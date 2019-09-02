@@ -6,79 +6,94 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import top.ridm.maoni.mapper.PostMapper;
-import top.ridm.maoni.mapper.UserMapper;
+import top.ridm.maoni.Common.Common;
+import top.ridm.maoni.DAO.PostDAO;
 import top.ridm.maoni.model.DO.PostDO;
+import top.ridm.maoni.model.DO.TagDO;
 import top.ridm.maoni.model.DO.UserDO;
 import top.ridm.maoni.model.VO.PostVO;
 import top.ridm.maoni.model.VO.PostPaginationVO;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class PostService {
     @Autowired
-    private PostMapper postMapper;
+    PostDAO postDAO;
+
     @Autowired
-    private UserMapper userMapper;
+    TagService tagService;
 
     @Value("${maoni.defaultAvatarUrl}")
     private String defaultAvatarUrl;
 
+    public List<PostVO> listRelated(int id, List<TagDO> tags) {
+        int postsMaxLength = 10;
+        if(tags == null || tags.size()==0){
+            return null;
+        }
+        List<Integer> l = tags.stream().map(TagDO::getId).collect(Collectors.toList());
+        return postDAO.listRelated(id,l);
+    }
+
     public PostPaginationVO list(){
-        Page<PostDO> DOlist = postMapper.list();
-        return translatePagination(DOlist);
+        return Common.translatePagination(postDAO.list());
     }
 
     public PostPaginationVO myPost(int userId){
-        return translatePagination(postMapper.myPost(userId));
+        return Common.translatePagination(postDAO.myPost(userId));
     }
 
-    public PostPaginationVO translatePagination(Page<PostDO> DOlist){
-        List<PostVO> VOlist = new ArrayList<>(DOlist.size());
-        for(PostDO DO :DOlist){
-            PostVO VO = new PostVO();
-            if(VO.getAvatarUrl() == null){
-                VO.setAvatarUrl(defaultAvatarUrl);
-            }
-            BeanUtils.copyProperties(DO,VO);
-            VOlist.add(VO);
-        }
-        PostPaginationVO res = new PostPaginationVO(VOlist,DOlist.getPageNum(),DOlist.getPages());
-        return res;
-    }
+
 
     public PostVO getVOById(int id){
-        return postMapper.getVOById(id);
+        PostVO post = postDAO.selectByPrimaryKey(id);
+        if(post != null){
+            List<TagDO> list = tagService.listPostTags(id);
+            if(list != null && list.size() > 0) {
+                post.setTags(list.stream().map(TagDO::getTag).reduce((a, s) -> a + "," + s).get());
+            }
+        }
+        return post;
     }
 
     public void addPostView(int id){
-        postMapper.addPostView(id);
+        postDAO.addPostView(id);
     }
 
-    public boolean isMyPost(int id, int userId) {
-        return postMapper.isMyPost(id,userId);
-    }
 
-    public void newPost(UserDO user, int id, String title, String description, String tags) {
+    //return post id
+    public int newPost(UserDO user, String title, String description, String tags) {
         PostDO post = new PostDO();
         post.setTitle(title);
         post.setDescription(description);
-        post.setTags(tags);
-        post.setCreateBy(user.getId());
-        postMapper.insert(post);
+        post.setUserId(user.getId());
+        postDAO.insert(post);
+        tagService.deals(post.getId(),tags);
+        return post.getId();
     }
 
-    public boolean modifiedPost(UserDO user, int id, String title, String description, String tags) {
-        PostDO post = postMapper.getDOById(id);
-        if(user.getId() !=post.getCreateBy()){
+    public boolean updatePost(UserDO user, int postId, String title, String description, String tags, String oldTags) {
+        if(user.getId() != postDAO.getCreatorIdByPostId(postId)){
             return false;
         }
+        PostDO post = new PostDO();
+        post.setId(postId);
         post.setTitle(title);
         post.setDescription(description);
-        post.setTags(tags);
-        postMapper.updatePublic(post);
+        postDAO.updatePost(post);
+        tagService.deals(post.getId(),tags,oldTags);
         return true;
     }
+
+    public void increaseCommentCountById(Integer id) {
+        postDAO.increaseCommentCount(id);
+    }
+    public void decreaseCommentCountById(Integer id) {
+        postDAO.decreaseCommentCount(id);
+    }
+
 }

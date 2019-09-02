@@ -21,8 +21,12 @@ maoni:
     api:
       login: /login
       logout: /logout
-  defaultAvatarUrl: https://avatars2.githubusercontent.com/u/3821949?v=4
+  defaultAvatarUrl: http://47.106.117.210/file/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20180922223339.jpg
 
 pagehelper:
   helperDialect: mysql
+
+mybatis:
+  type-aliases-package: top.ridm.maoni.model.DO
+  mapper-locations: classpath:mapper/*.xml
 

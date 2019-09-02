@@ -2,11 +2,41 @@
  * Created by codedrinker on 2019/6/1.
  */
 
+
+function clickLike(e) {
+    if(e.classList.contains('active')){
+        unlikeit(e);
+    }else{
+        likeit(e);
+    }
+}
+
+
+function unlikeit(e){
+    var commentId = e.getAttribute("data-id");
+    $.get("/unlike?commentId=" + commentId,
+        function(){
+            e.classList.remove("active");
+        })
+}
+
+/**
+ * 点赞
+ */
+function likeit(e){
+    var commentId = e.getAttribute("data-id");
+    $.get("/like?commentId=" + commentId,
+        function(){
+            e.classList.add("active");
+        })
+    $("#like_count_" + commentId).text(parseInt($("#like_count_" + commentId).text()) + 1)
+}
+
 /**
  * 提交回复
  */
 function post() {
-    var questionId = $("#question_id").val();
+    var questionId = $("#post_id").val();
     var content = $("#comment_content").val();
     comment2target(questionId, 1, content);
 }
@@ -27,21 +57,8 @@ function comment2target(targetId, type, content) {
             "type": type
         }),
         success: function (response) {
-            if (response.code == 200) {
-                window.location.reload();
-            } else {
-                if (response.code == 2003) {
-                    var isAccepted = confirm(response.message);
-                    if (isAccepted) {
-                        window.open("https://github.com/login/oauth/authorize?client_id=2859958f9f059979ed3a&redirect_uri=" + document.location.origin + "/callback&scope=user&state=1");
-                        window.localStorage.setItem("closable", true);
-                    }
-                } else {
-                    alert(response.message);
-                }
-            }
+            window.location.reload();
         },
-        dataType: "json"
     });
 }
 
@@ -74,27 +91,28 @@ function collapseComments(e) {
             e.setAttribute("data-collapse", "in");
             e.classList.add("active");
         } else {
-            $.getJSON("/comment/" + id, function (data) {
-                $.each(data.data.reverse(), function (index, comment) {
+            $.get("/comment?id=" + id
+                ,function (data) {
+                $.each(data,function (index, comment) {
                     var mediaLeftElement = $("<div/>", {
                         "class": "media-left"
                     }).append($("<img/>", {
                         "class": "media-object img-rounded",
-                        "src": comment.user.avatarUrl
+                        "src": comment.avatarUrl
                     }));
 
                     var mediaBodyElement = $("<div/>", {
                         "class": "media-body"
                     }).append($("<h5/>", {
                         "class": "media-heading",
-                        "html": comment.user.name
+                        "html": comment.username
                     })).append($("<div/>", {
                         "html": comment.content
                     })).append($("<div/>", {
                         "class": "menu"
                     }).append($("<span/>", {
                         "class": "pull-right",
-                        "html": moment(comment.gmtCreate).format('YYYY-MM-DD')
+                        "html": moment(comment.createTime).format('YYYY-MM-DD')
                     })));
 
                     var mediaElement = $("<div/>", {

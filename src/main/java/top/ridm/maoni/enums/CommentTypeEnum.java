@@ -4,16 +4,16 @@ package top.ridm.maoni.enums;
  * Created by codedrinker on 2019/5/31.
  */
 public enum CommentTypeEnum {
-    QUESTION(1),
-    COMMENT(2);
-    private Integer type;
+    POST((short)1),
+    COMMENT((short)2);
+    private short type;
 
 
-    public Integer getType() {
+    public short getType() {
         return type;
     }
 
-    CommentTypeEnum(Integer type) {
+    CommentTypeEnum(short type) {
         this.type = type;
     }
 

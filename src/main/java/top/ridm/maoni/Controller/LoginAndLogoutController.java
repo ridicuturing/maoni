@@ -4,16 +4,14 @@ package top.ridm.maoni.Controller;
 import lombok.ToString;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.jdbc.core.metadata.PostgresCallMetaDataProvider;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import top.ridm.maoni.mapper.PostMapper;
-import top.ridm.maoni.mapper.UserMapper;
 import top.ridm.maoni.model.DO.UserDO;
+import top.ridm.maoni.service.UserService;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -24,11 +22,9 @@ import java.util.UUID;
 @Controller
 public class LoginAndLogoutController {
 
-    @Autowired
-    UserMapper userMapper;
 
     @Autowired
-    PostMapper postMapper;
+    private UserService userService;
 
     @Value("${maoni.web.page.login}")
     private String loginPage;
@@ -43,12 +39,7 @@ public class LoginAndLogoutController {
         return "hello";
     }
 
-    @GetMapping("/a")
-    public String a(HttpServletResponse response, String name, Model model) throws IOException {
-        for(int i = 0; i < 100; i++)
-            postMapper.ainsert();
-        return "";
-    }
+
 
     @GetMapping("/login")
     public String loginPage(HttpServletRequest request, HttpServletResponse response, String account, String password){
@@ -64,14 +55,14 @@ public class LoginAndLogoutController {
         if(request.getSession().getAttribute("user") != null){
             return "{\"status\":\"1\"}";
         }
-        UserDO user = userMapper.checkUser(account,password);
+        UserDO user = userService.checkUser(account,password);
         if(user == null){
             return "{\"status\":\"-1\"}";
         }
         request.getSession().setAttribute("user",user);
         String token = UUID.randomUUID().toString().replace("-","");
         response.addCookie(new Cookie("token",token));
-        userMapper.addUserToken(user.getId(),token);
+        userService.addUserToken(user.getId(),token);
         return "{\"status\":\"1\"}";
     }
 
